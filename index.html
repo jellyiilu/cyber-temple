@@ -546,6 +546,8 @@ const G={
 };
 const skinTexture=canvasTex(256,256,(g,w,h)=>{g.fillStyle='#d9b18f';g.fillRect(0,0,w,h);for(let i=0;i<18000;i++){const x=Math.random()*w,y=Math.random()*h,a=Math.random()*.03;g.fillStyle=Math.random()<.5?`rgba(90,55,38,${a})`:`rgba(255,232,207,${a})`;g.fillRect(x,y,1.2,1.2);}},1,1);
 const skinM=std(0xd9b18f,{map:skinTexture,roughness:.82}), lineM=std(0x765344,{roughness:.95}),
+  faceLineM=new THREE.MeshBasicMaterial({color:0x694538}),
+  browM=new THREE.MeshBasicMaterial({color:0x8b6450}),
   cheekM=new THREE.MeshStandardMaterial({color:0xc97869,roughness:.95,transparent:true,opacity:.32,depthWrite:false}),
   footM=std(0xf1eee6,{roughness:.7}), pantsM=std(0x8798a0,{roughness:.9}), collarM=std(0xe8ecea,{roughness:.8});
 const blobM=new THREE.MeshBasicMaterial({map:blobTex,transparent:true,depthWrite:false});
@@ -568,22 +570,23 @@ function makeMonk(robe,sash){
   const neck=new THREE.Mesh(new THREE.CylinderGeometry(.105,.14,.22,24),skinM); neck.position.y=.69; torso.add(neck);
   const headRig=new THREE.Group(); headRig.position.y=.84; headRig.scale.setScalar(.74); torso.add(headRig);
   const head=new THREE.Mesh(G.head,skinM); head.scale.set(1.02,.98,1); headRig.add(head);
+  const faceStroke=(points,r,mat)=>{const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));const mesh=new THREE.Mesh(new THREE.TubeGeometry(curve,24,r,8,false),mat);headRig.add(mesh);return mesh;};
   // Subtle sculpted bridge and tip give the face a more human profile.
-  const bridge=new THREE.Mesh(new THREE.CylinderGeometry(.021,.032,.1,16),skinM); bridge.position.set(0,-.005,.412); headRig.add(bridge);
-  const noseTip=new THREE.Mesh(new THREE.SphereGeometry(.045,24,18),skinM); noseTip.position.set(0,-.055,.445); noseTip.scale.set(1,.72,.9); headRig.add(noseTip);
+  const bridge=new THREE.Mesh(new THREE.CylinderGeometry(.021,.032,.1,16),skinM); bridge.position.set(0,-.005,.43); headRig.add(bridge);
+  const noseTip=new THREE.Mesh(new THREE.SphereGeometry(.045,24,18),skinM); noseTip.position.set(0,-.055,.465); noseTip.scale.set(1,.72,.9); headRig.add(noseTip);
   const nostrilM=std(0x815b49,{roughness:1});
   for(const x of [-1,1]){const n=new THREE.Mesh(new THREE.SphereGeometry(.012,12,8),nostrilM);n.position.set(x*.025,-.078,.477);n.scale.set(1,.55,.35);headRig.add(n);}
   const lipM=std(0x78483e,{roughness:.95});
   for(const x of [-1,1]){
-    // Closed, gently smiling eyes and softly modeled cheeks.
-    const eye=new THREE.Mesh(G.arc,lineM); eye.position.set(x*.145,.025,.414); eye.scale.set(.82,.33,.48); eye.rotation.z=x*.08; eye.rotation.y=x*-.2; headRig.add(eye);
-    const lowerEye=new THREE.Mesh(G.arc,skinM);lowerEye.rotation.z=Math.PI;lowerEye.position.set(x*.145,.005,.408);lowerEye.scale.set(.72,.22,.4);headRig.add(lowerEye);
-    const c=new THREE.Mesh(G.cheek,skinM); c.scale.set(.8,.48,.2); c.position.set(x*.235,-.075,.365); c.rotation.y=x*.48; headRig.add(c);
+    // Give the closed, smiling eyes a clear contour that stays visible on the curved face.
+    faceStroke([[x*.235,.045,.38],[x*.195,.018,.402],[x*.15,.008,.416],[x*.105,.018,.43],[x*.065,.042,.435]],.009,faceLineM);
+    faceStroke([[x*.235,.105,.365],[x*.19,.12,.39],[x*.14,.123,.409],[x*.095,.108,.426]],.007,browM);
+    const c=new THREE.Mesh(G.cheek,cheekM); c.scale.set(.9,.56,.24); c.position.set(x*.235,-.075,.386); c.rotation.y=x*.48; headRig.add(c);
     const ear=new THREE.Mesh(new THREE.SphereGeometry(.075,24,18),skinM); ear.position.set(x*.425,0,-.005); ear.scale.set(.48,.82,.56); headRig.add(ear);
     const earFold=new THREE.Mesh(new THREE.TorusGeometry(.038,.009,6,16,Math.PI*1.25),lineM);ear.position.set(x*.425,0,-.005);earFold.position.set(x*.444,.005,.035);earFold.rotation.y=x*Math.PI/2;earFold.scale.set(.65,1.5,1);headRig.add(earFold);
   }
-  const smile=new THREE.Mesh(G.arc,lipM); smile.rotation.z=Math.PI; smile.position.set(0,-.112,.414); smile.scale.set(.62,.36,.42); headRig.add(smile);
-  const lowerLip=new THREE.Mesh(new THREE.SphereGeometry(.032,20,14),skinM); lowerLip.position.set(0,-.137,.409); lowerLip.scale.set(1.25,.42,.45); headRig.add(lowerLip);
+  faceStroke([[-.125,-.125,.415],[-.08,-.148,.431],[0,-.157,.44],[.08,-.148,.431],[.125,-.125,.415]],.009,faceLineM);
+  const lowerLip=new THREE.Mesh(new THREE.SphereGeometry(.035,20,14),skinM); lowerLip.position.set(0,-.184,.419); lowerLip.scale.set(1.25,.42,.45); headRig.add(lowerLip);
   const arms=[],legs=[];
   for(const x of [-1,1]){
     const a=new THREE.Group(); a.position.set(x*.27,.44,0); a.userData.side=x; torso.add(a);
